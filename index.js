@@ -196,32 +196,43 @@ http
     if (req.url === '/diag5') {
       const out = {};
       const url = 'https://discord.com/api/v10/gateway/bot';
-      const headers = {
-        Authorization: `Bot ${process.env.TOKEN}`,
-        'User-Agent': 'DiscordBot (https://github.com/Torutox/Bot-Discord, 1.0.0)',
-        'Content-Type': 'application/json',
+      const variants = {
+        discojs: {
+          Authorization: `Bot ${process.env.TOKEN}`,
+          'User-Agent': 'DiscordBot (https://github.com/Torutox/Bot-Discord, 1.0.0)',
+          'Content-Type': 'application/json',
+        },
+        browser: {
+          Authorization: `Bot ${process.env.TOKEN}`,
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+          Accept: '*/*',
+        },
+        nodeUA: {
+          Authorization: `Bot ${process.env.TOKEN}`,
+          'Accept': '*/*',
+        },
+        discordpy: {
+          Authorization: `Bot ${process.env.TOKEN}`,
+          'User-Agent': 'DiscordBot (https://github.com/Torutox, 1.0.0) Python/3.11 aiohttp/3.9.0',
+        },
       };
-      out.headers_enviados = Object.keys(headers);
-      const t0 = Date.now();
-      fetch(url, { headers }).then(async (r) => {
-        out.status = r.status;
-        out.ms = Date.now() - t0;
-        const txt = await r.text().catch((e) => `error leyendo body: ${e.message}`);
-        out.body = txt.slice(0, 400);
+      out.variants = {};
+      let pending = Object.keys(variants).length;
+      const send = () => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(out, null, 2));
-      }).catch((e) => {
-        out.error = e.message;
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(out, null, 2));
-      });
-      setTimeout(() => {
-        if (!out.status && !out.error) {
-          out.error = 'TIMEOUT (15s sin respuesta)';
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify(out, null, 2));
-        }
-      }, 15000);
+      };
+      for (const [name, headers] of Object.entries(variants)) {
+        fetch(url, { headers }).then(async (r) => {
+          const txt = await r.text().catch(() => '');
+          out.variants[name] = { status: r.status, es_cloudflare: txt.includes('Access denied'), ms: undefined };
+          if (--pending === 0) send();
+        }).catch((e) => {
+          out.variants[name] = { error: e.message };
+          if (--pending === 0) send();
+        });
+      }
+      setTimeout(() => { if (pending > 0) { send(); } }, 12000);
       return;
     }
     res.writeHead(200, { 'Content-Type': 'text/plain' });
