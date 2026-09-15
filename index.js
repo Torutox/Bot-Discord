@@ -8,7 +8,11 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
   ],
-  rest: { timeout: 20000, retries: 2 },
+  rest: {
+    timeout: 20000,
+    retries: 2,
+    makeRequest: (url, init) => fetch(url, init),
+  },
 });
 
 const __origGet = client.rest.get.bind(client.rest);
