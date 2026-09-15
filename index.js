@@ -139,6 +139,37 @@ http
       w.on('error', (e) => { out.ws = `ERROR: ${e.message}`; clearTimeout(t); if (!timedOut) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out)); } });
       return;
     }
+    if (req.url === '/diag3') {
+      const out = { proxyEnv: {} };
+      for (const k of ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'NO_PROXY', 'no_proxy']) {
+        if (process.env[k]) out.proxyEnv[k] = process.env[k];
+      }
+      const send = () => {
+        for (const k of ['gateway', 'api']) out[k] = out[k] || 'no completó';
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(out, null, 2));
+      };
+      const https = require('https');
+      const reqH = https.get('https://discord.com/api/v10/gateway/bot', { timeout: 8000 }, (r) => {
+        out.api_https = `status ${r.statusCode}`;
+        r.resume();
+        check();
+      });
+      reqH.on('timeout', () => { out.api_https = 'TIMEOUT https.get'; reqH.destroy(); check(); });
+      reqH.on('error', (e) => { out.api_https = `ERROR: ${e.message}`; check(); });
+      let done = false;
+      const check = () => { if (--pending === 0) send(); };
+      let pending = 2;
+      fetch('https://discord.com/api/v10/gateway/bot').then((r) => {
+        out.api_fetch = `status ${r.status}`;
+        check();
+      }).catch((e) => {
+        out.api_fetch = `ERROR: ${e.message}`;
+        check();
+      });
+      setTimeout(() => { out.api_fetch = out.api_fetch || 'TIMEOUT fetch (10s)'; check(); }, 10000);
+      return;
+    }
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('ok');
   })
