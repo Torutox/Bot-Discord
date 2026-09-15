@@ -103,14 +103,26 @@ const PORT = process.env.PORT || 3000;
 http
   .createServer((req, res) => {
     if (req.url === '/diag') {
+      const out = { step: {} };
       const dns = require('dns');
-      dns.resolve('gateway.discord.gg', (err, addrs) => {
+      const done = () => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify({
-            dns_gateway: err ? `ERROR: ${err.code}` : addrs,
-          })
-        );
+        res.end(JSON.stringify(out, null, 2));
+      };
+      dns.resolve('gateway.discord.gg', (err, addrs) => {
+        out.step.dns = err ? `ERROR: ${err.code}` : addrs;
+        const sock = require('net').connect({ host: 'gateway.discord.gg', port: 443, timeout: 8000 });
+        const next = () => {
+          if (out.step.ws) return;
+          const ws = require('ws');
+          const w = new ws('wss://gateway.discord.gg/?v=10&encoding=json', { timeout: 8000 });
+          w.on('open', () => { out.step.ws = 'ok'; w.close(); });
+          w.on('error', (e) => { out.step.ws = `ERROR: ${e.message}`; });
+          w.on('close', () => { done(); });
+        };
+        sock.on('connect', () => { out.step.tcp = 'ok'; sock.destroy(); })
+          .on('error', (e) => { out.step.tcp = `ERROR: ${e.message}`; next(); })
+          .on('close', next);
       });
       return;
     }
