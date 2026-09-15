@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: bot-discord
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: node index.js
+    healthCheckPath: /
+    envVars:
+      - key: TOKEN
+        sync: false
+      - key: CHANNEL_ID
+        sync: false

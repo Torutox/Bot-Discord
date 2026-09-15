@@ -1,4 +1,5 @@
 require('dotenv').config();
+const http = require('http');
 const { Client, GatewayIntentBits, Events, EmbedBuilder } = require('discord.js');
 
 const client = new Client({
@@ -60,3 +61,11 @@ client.on(Events.GuildMemberRemove, async (member) => {
 });
 
 client.login(process.env.TOKEN);
+
+const PORT = process.env.PORT || 3000;
+http
+  .createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('ok');
+  })
+  .listen(PORT, () => console.log(`Servidor HTTP en el puerto ${PORT}`));
