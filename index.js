@@ -88,6 +88,9 @@ if (!CHANNEL_ID) {
 console.log(`TOKEN definido: si (longitud ${process.env.TOKEN.length})`);
 console.log(`CHANNEL_ID definido: ${CHANNEL_ID}`);
 
+client.on('debug', (m) => console.log('[debug]', m));
+client.on('warn', (m) => console.log('[warn]', m));
+
 client
   .login(process.env.TOKEN)
   .then(() => console.log('Login ok, esperando evento ready...'))
