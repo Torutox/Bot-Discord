@@ -3,7 +3,7 @@ services:
     name: bot-discord
     runtime: node
     plan: free
-    region: oregon
+    region: frankfurt
     buildCommand: npm install
     startCommand: node index.js
     healthCheckPath: /
