@@ -16,9 +16,23 @@ client.once(Events.ClientReady, (c) => {
   console.log(`Bot conectado como ${c.user.tag}`);
 });
 
-client.on(Events.GuildMemberAdd, async (member) => {
+// Busca el canal por ID, usando fetch si no está en caché
+async function getChannel(guild) {
+  if (CHANNEL_ID && guild.channels.cache.has(CHANNEL_ID)) {
+    return guild.channels.cache.get(CHANNEL_ID);
+  }
   try {
-    const channel = member.guild.channels.cache.get(CHANNEL_ID);
+    return await guild.channels.fetch(CHANNEL_ID || '');
+  } catch (err) {
+    console.error('Canal no encontrado:', err.message);
+    return null;
+  }
+}
+
+client.on(Events.GuildMemberAdd, async (member) => {
+  console.log(`Evento GuildMemberAdd: ${member.user.tag} en ${member.guild.name}`);
+  try {
+    const channel = await getChannel(member.guild);
     if (!channel) return;
 
     const embed = new EmbedBuilder()
@@ -33,14 +47,16 @@ client.on(Events.GuildMemberAdd, async (member) => {
       .setTimestamp();
 
     await channel.send({ embeds: [embed] });
+    console.log('Entrada enviada al canal', CHANNEL_ID);
   } catch (err) {
     console.error('Error al registrar entrada:', err);
   }
 });
 
 client.on(Events.GuildMemberRemove, async (member) => {
+  console.log(`Evento GuildMemberRemove: ${member.user.tag} en ${member.guild.name}`);
   try {
-    const channel = member.guild.channels.cache.get(CHANNEL_ID);
+    const channel = await getChannel(member.guild);
     if (!channel) return;
 
     const embed = new EmbedBuilder()
@@ -55,6 +71,7 @@ client.on(Events.GuildMemberRemove, async (member) => {
       .setTimestamp();
 
     await channel.send({ embeds: [embed] });
+    console.log('Salida enviada al canal', CHANNEL_ID);
   } catch (err) {
     console.error('Error al registrar salida:', err);
   }
