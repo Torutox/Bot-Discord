@@ -102,6 +102,18 @@ client
 const PORT = process.env.PORT || 3000;
 http
   .createServer((req, res) => {
+    if (req.url === '/diag') {
+      const dns = require('dns');
+      dns.resolve('gateway.discord.gg', (err, addrs) => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            dns_gateway: err ? `ERROR: ${err.code}` : addrs,
+          })
+        );
+      });
+      return;
+    }
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('ok');
   })
