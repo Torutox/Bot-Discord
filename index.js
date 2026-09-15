@@ -8,7 +8,26 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
   ],
+  rest: { timeout: 20000, retries: 2 },
 });
+
+const __origGet = client.rest.get.bind(client.rest);
+client.rest.get = async (...args) => {
+  const route = args[0] && args[0].route ? args[0].route : String(args[0] ?? '');
+  console.log('[rest] GET inicio:', route);
+  const t0 = Date.now();
+  const timer = setTimeout(() => console.log(`[rest] SIGUE PENDIENTE tras 30s: ${route}`), 30000);
+  try {
+    const r = await __origGet(...args);
+    console.log(`[rest] GET ok: ${route} en ${Date.now() - t0}ms`);
+    return r;
+  } catch (e) {
+    console.log(`[rest] GET error: ${route} -> ${e.message}`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 const CHANNEL_ID = process.env.CHANNEL_ID || null;
 
