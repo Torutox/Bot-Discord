@@ -126,6 +126,19 @@ http
       });
       return;
     }
+    if (req.url === '/diag2') {
+      const out = {};
+      const ws = require('ws');
+      const url = 'wss://gateway.discord.gg/?v=10&encoding=json&compress=zlib-stream&shard_id=0&shard_count=1';
+      let timedOut = false;
+      const w = new ws(url, { timeout: 10000 });
+      const t = setTimeout(() => { timedOut = true; out.ws = 'TIMEOUT (10s sin respuesta)'; res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out)); try { w.terminate(); } catch (e) {} }, 11000);
+      w.on('open', () => { out.ws = 'ok'; out.url = url; clearTimeout(t); res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out)); w.close(); });
+      w.on('message', (m) => { console.log('[diag2] mensaje del gateway:', m.toString().slice(0, 200)); });
+      w.on('unexpected-response', (_req, resp) => { out.ws = `unexpected-response ${resp.statusCode}`; clearTimeout(t); res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out)); });
+      w.on('error', (e) => { out.ws = `ERROR: ${e.message}`; clearTimeout(t); if (!timedOut) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out)); } });
+      return;
+    }
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('ok');
   })
