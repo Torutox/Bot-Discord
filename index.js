@@ -77,7 +77,24 @@ client.on(Events.GuildMemberRemove, async (member) => {
   }
 });
 
-client.login(process.env.TOKEN);
+if (!process.env.TOKEN) {
+  console.error('FALTA LA VARIABLE TOKEN en las variables de entorno de Render.');
+  process.exit(1);
+}
+if (!CHANNEL_ID) {
+  console.error('FALTA LA VARIABLE CHANNEL_ID en las variables de entorno de Render.');
+  process.exit(1);
+}
+console.log(`TOKEN definido: si (longitud ${process.env.TOKEN.length})`);
+console.log(`CHANNEL_ID definido: ${CHANNEL_ID}`);
+
+client
+  .login(process.env.TOKEN)
+  .then(() => console.log('Login ok, esperando evento ready...'))
+  .catch((err) => {
+    console.error('ERROR AL INICIAR SESIÓN:', err.message);
+    process.exit(1);
+  });
 
 const PORT = process.env.PORT || 3000;
 http
